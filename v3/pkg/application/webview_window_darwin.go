@@ -123,6 +123,8 @@ void* windowNew(unsigned int id, int width, int height, bool fraudulentWebsiteWa
 		[view setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
 		[view addSubview:dragView];
 		dragView.windowId = id;
+
+		window.dragView = dragView;
 	}
 
 	window.webView = webView;
@@ -778,6 +780,17 @@ static void startDrag(void *window) {
 
 	// start drag
 	[windowDelegate startDrag:nsWindow];
+}
+
+static void startFileDrag(void *window, char* filename) {
+	NSString* nsFilename = [NSString stringWithUTF8String:filename];
+	WebviewWindow* nsWindow = (WebviewWindow*)window;
+
+	WebviewDrag* dragView = (WebviewDrag*)[nsWindow dragView];
+
+	// start file drag
+	[dragView startFileDrag];
+	free(filename);
 }
 
 // Credit: https://stackoverflow.com/q/33319295
@@ -1524,6 +1537,12 @@ func (w *macosWebviewWindow) setHTML(html string) {
 
 func (w *macosWebviewWindow) startDrag() error {
 	C.startDrag(w.nsWindow)
+	return nil
+}
+
+func (w *macosWebviewWindow) startFileDrag(filename string) error {
+	cFilename := C.CString(filename)
+	C.startFileDrag(w.nsWindow, cFilename)
 	return nil
 }
 

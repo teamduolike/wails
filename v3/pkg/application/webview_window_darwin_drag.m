@@ -104,4 +104,36 @@ extern void macosOnDragOver(unsigned int windowId, int x, int y);
     return NO;
 }
 
+- (NSDragOperation)draggingSession:(NSDraggingSession *)session sourceOperationMaskForDraggingContext:(NSDraggingContext)context {
+    return NSDragOperationCopy; // Allow copy operation
+}
+
+- (void)draggingSession:(NSDraggingSession *)session endedAtPoint:(NSPoint)screenPoint operation:(NSDragOperation)operation {
+    NSLog(@"Drag operation ended");
+}
+
+- (void)startFileDrag {
+    NSEvent *fakeMouseEvent = [NSEvent mouseEventWithType:NSEventTypeLeftMouseDown
+	location:NSMakePoint(100, 100)
+	modifierFlags:0
+	timestamp:[[NSProcessInfo processInfo] systemUptime]
+	windowNumber:0
+	context:nil
+	eventNumber:0
+	clickCount:1
+	pressure:1.0
+    ];
+
+    NSPasteboardItem *pasteboardItem = [[NSPasteboardItem alloc] init];
+    [pasteboardItem setString:@"24" forType:NSPasteboardTypeString];
+
+    NSDraggingItem *draggingItem = [[NSDraggingItem alloc] initWithPasteboardWriter:pasteboardItem];
+
+    NSImage *image = [[NSImage alloc] initWithSize:self.bounds.size];
+
+    [draggingItem setDraggingFrame:self.bounds contents:image];
+
+    [self beginDraggingSessionWithItems:@[draggingItem] event:fakeMouseEvent source:self];
+}
+
 @end

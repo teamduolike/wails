@@ -2,6 +2,6 @@
 
 #import <AppKit/AppKit.h>
 
-@interface WebviewDrag : NSView <NSDraggingDestination>
+@interface WebviewDrag : NSView <NSDraggingDestination, NSDraggingSource>
 @property unsigned int windowId;
 @end

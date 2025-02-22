@@ -23,6 +23,7 @@ type Window interface {
 	GetZoom() float64
 	handleDragAndDropMessage(filenames []string, dropTarget *DropTargetDetails)
 	InitiateFrontendDropProcessing(filenames []string, x int, y int)
+	StartFileDrag(filename string) error
 	HandleMessage(message string)
 	HandleWindowEvent(id uint)
 	Height() int

@@ -82,6 +82,7 @@ type (
 		nativeWindow() unsafe.Pointer
 		startDrag() error
 		startResize(border string) error
+		startFileDrag(filename string) error
 		print() error
 		setEnabled(enabled bool)
 		physicalBounds() Rect
@@ -1258,6 +1259,15 @@ func (w *WebviewWindow) handleDragAndDropMessage(filenames []string, dropTarget 
 		}
 		listener.callback(thisEvent)
 	}
+}
+
+func (w *WebviewWindow) StartFileDrag(filename string) error {
+	if w.impl == nil || w.isDestroyed() {
+		return nil
+	}
+	return InvokeSyncWithError(func() error {
+		return w.impl.startFileDrag(filename)
+	})
 }
 
 func (w *WebviewWindow) OpenContextMenu(data *ContextMenuData) {
