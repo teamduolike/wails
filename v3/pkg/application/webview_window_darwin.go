@@ -782,15 +782,22 @@ static void startDrag(void *window) {
 	[windowDelegate startDrag:nsWindow];
 }
 
-static void startFileDrag(void *window, char* filename) {
+static void startFileDrag(void *window, char* filename, char* image) {
 	NSString* nsFilename = [NSString stringWithUTF8String:filename];
+	NSString* nsImageFile = [NSString stringWithUTF8String:image];
+
 	WebviewWindow* nsWindow = (WebviewWindow*)window;
 
 	WebviewDrag* dragView = (WebviewDrag*)[nsWindow dragView];
 
+	WebviewWindowDelegate* windowDelegate = (WebviewWindowDelegate*)[nsWindow delegate];
+
+	NSEvent* nsEvent = windowDelegate.leftMouseEvent;
+
 	// start file drag
-	[dragView startFileDrag];
+	[dragView startFileDrag:nsFilename image:nsImageFile event:nsEvent];
 	free(filename);
+	free(image);
 }
 
 // Credit: https://stackoverflow.com/q/33319295
@@ -1540,9 +1547,10 @@ func (w *macosWebviewWindow) startDrag() error {
 	return nil
 }
 
-func (w *macosWebviewWindow) startFileDrag(filename string) error {
+func (w *macosWebviewWindow) startFileDrag(filename string, image string) error {
 	cFilename := C.CString(filename)
-	C.startFileDrag(w.nsWindow, cFilename)
+	cImage := C.CString(image)
+	C.startFileDrag(w.nsWindow, cFilename, cImage)
 	return nil
 }
 

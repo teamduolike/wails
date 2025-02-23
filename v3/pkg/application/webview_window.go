@@ -2,6 +2,7 @@ package application
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"slices"
 	"strings"
@@ -82,7 +83,7 @@ type (
 		nativeWindow() unsafe.Pointer
 		startDrag() error
 		startResize(border string) error
-		startFileDrag(filename string) error
+		startFileDrag(filename string, image string) error
 		print() error
 		setEnabled(enabled bool)
 		physicalBounds() Rect
@@ -1261,13 +1262,32 @@ func (w *WebviewWindow) handleDragAndDropMessage(filenames []string, dropTarget 
 	}
 }
 
-func (w *WebviewWindow) StartFileDrag(filename string) error {
+func (w *WebviewWindow) StartFileDrag(filename string, image string) error {
 	if w.impl == nil || w.isDestroyed() {
 		return nil
 	}
-	return InvokeSyncWithError(func() error {
-		return w.impl.startFileDrag(filename)
+
+	_, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return fmt.Errorf("issue finding file %s", filename)
+	} else if err != nil {
+		return err
+	}
+
+	_, err = os.Stat(image)
+	if os.IsNotExist(err) {
+		return fmt.Errorf("issue finding image %s", image)
+	} else if err != nil {
+		return err
+	}
+
+	// Do we want to check for the image file?
+	w.Error(image)
+
+	InvokeSync(func() {
+		w.impl.startFileDrag(filename, image)
 	})
+	return nil
 }
 
 func (w *WebviewWindow) OpenContextMenu(data *ContextMenuData) {

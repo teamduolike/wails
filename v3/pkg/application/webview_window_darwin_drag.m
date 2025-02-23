@@ -25,7 +25,7 @@ extern void macosOnDragOver(unsigned int windowId, int x, int y);
 // draggingEntered:
 - (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender {
     NSPasteboard *pasteboard = [sender draggingPasteboard];
-    if ([[pasteboard types] containsObject:NSFilenamesPboardType]) {
+    if (!self.isDraggingOut && [[pasteboard types] containsObject:NSFilenamesPboardType]) {
         processWindowEvent(self.windowId, EventWindowFileDraggingEntered);
         // Notify JS for hover effects
         macosOnDragEnter(self.windowId);
@@ -109,31 +109,44 @@ extern void macosOnDragOver(unsigned int windowId, int x, int y);
 }
 
 - (void)draggingSession:(NSDraggingSession *)session endedAtPoint:(NSPoint)screenPoint operation:(NSDragOperation)operation {
-    NSLog(@"Drag operation ended");
+    NSLog(@"Dragging session ended at: %@", NSStringFromPoint(screenPoint));
+
+    // processWindowEvent(self.windowId, EventWindowFileDraggingEntered);
+    if (operation == NSDragOperationNone) {
+        NSLog(@"The drag was canceled or dropped in an unsupported location.");
+    } else {
+        NSLog(@"Drag operation completed successfully with operation: %lu", operation);
+    }
+    self.isDraggingOut = false;
 }
 
-- (void)startFileDrag {
-    NSEvent *fakeMouseEvent = [NSEvent mouseEventWithType:NSEventTypeLeftMouseDown
-	location:NSMakePoint(100, 100)
-	modifierFlags:0
-	timestamp:[[NSProcessInfo processInfo] systemUptime]
-	windowNumber:0
-	context:nil
-	eventNumber:0
-	clickCount:1
-	pressure:1.0
-    ];
+- (void)startFileDrag:(NSString *)filename image:(NSString *)image event:(NSEvent *)event {
+    NSURL *fileURL = [NSURL fileURLWithPath:filename];
 
     NSPasteboardItem *pasteboardItem = [[NSPasteboardItem alloc] init];
-    [pasteboardItem setString:@"24" forType:NSPasteboardTypeString];
+    [pasteboardItem setString:[fileURL absoluteString] forType:NSPasteboardTypeFileURL];
 
     NSDraggingItem *draggingItem = [[NSDraggingItem alloc] initWithPasteboardWriter:pasteboardItem];
+    
+    NSImage *nsImage = [[NSImage alloc] initWithContentsOfFile:image];
+    if (!nsImage) {
+	return;
+    }
 
-    NSImage *image = [[NSImage alloc] initWithSize:self.bounds.size];
+    CGFloat width = nsImage.size.width;
+    CGFloat height = nsImage.size.height;
+    // Make sure the bounds are not 0, as it will fail
+    if (width == 0) {
+	width = 20.0;
+    }
+    if (height == 0) {
+	height = 20.0;
+    }
 
-    [draggingItem setDraggingFrame:self.bounds contents:image];
-
-    [self beginDraggingSessionWithItems:@[draggingItem] event:fakeMouseEvent source:self];
+    NSRect bounds = NSMakeRect(event.locationInWindow.x, event.locationInWindow.y, width, height);
+    [draggingItem setDraggingFrame:bounds contents:nsImage];
+    [self beginDraggingSessionWithItems:@[draggingItem] event:event source:self];
+    self.isDraggingOut = true;
 }
 
 @end
