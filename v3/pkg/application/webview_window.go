@@ -1281,9 +1281,6 @@ func (w *WebviewWindow) StartFileDrag(filename string, image string) error {
 		return err
 	}
 
-	// Do we want to check for the image file?
-	w.Error(image)
-
 	InvokeSync(func() {
 		w.impl.startFileDrag(filename, image)
 	})
