@@ -243,6 +243,11 @@ typedef NS_ENUM(NSInteger, MacLiquidGlassStyle) {
     }
 }
 @end
+@implementation WKWebView (AcceptsFirstMouse)
+- (BOOL)acceptsFirstMouse:(NSEvent *)event {
+    return YES;
+}
+@end
 @implementation WebviewWindowDelegate
 - (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender {
     NSPasteboard *pasteboard = [sender draggingPasteboard];

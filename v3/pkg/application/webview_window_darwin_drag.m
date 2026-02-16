@@ -149,4 +149,8 @@ extern void macosOnDragOver(unsigned int windowId, int x, int y);
     self.isDraggingOut = true;
 }
 
+- (BOOL)acceptsFirstMouse:(NSEvent *)event {
+    return YES;
+}
+
 @end
