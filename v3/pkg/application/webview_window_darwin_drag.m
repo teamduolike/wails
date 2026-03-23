@@ -109,25 +109,22 @@ extern void macosOnDragOver(unsigned int windowId, int x, int y);
 }
 
 - (void)draggingSession:(NSDraggingSession *)session endedAtPoint:(NSPoint)screenPoint operation:(NSDragOperation)operation {
-    NSLog(@"Dragging session ended at: %@", NSStringFromPoint(screenPoint));
-
-    // processWindowEvent(self.windowId, EventWindowFileDraggingEntered);
-    if (operation == NSDragOperationNone) {
-        NSLog(@"The drag was canceled or dropped in an unsupported location.");
-    } else {
-        NSLog(@"Drag operation completed successfully with operation: %lu", operation);
-    }
     self.isDraggingOut = false;
 }
 
 - (void)startFileDrag:(NSString *)filename image:(NSString *)image event:(NSEvent *)event {
+    // Fall back to [NSApp currentEvent] if leftMouseEvent was cleared before InvokeSync ran.
+    if (!event) {
+        event = [NSApp currentEvent];
+    }
+
     NSURL *fileURL = [NSURL fileURLWithPath:filename];
 
     NSPasteboardItem *pasteboardItem = [[NSPasteboardItem alloc] init];
     [pasteboardItem setString:[fileURL absoluteString] forType:NSPasteboardTypeFileURL];
 
     NSDraggingItem *draggingItem = [[NSDraggingItem alloc] initWithPasteboardWriter:pasteboardItem];
-    
+
     NSImage *nsImage = [[NSImage alloc] initWithContentsOfFile:image];
     if (!nsImage) {
 	return;
@@ -145,7 +142,13 @@ extern void macosOnDragOver(unsigned int windowId, int x, int y);
 
     NSRect bounds = NSMakeRect(event.locationInWindow.x, event.locationInWindow.y, width, height);
     [draggingItem setDraggingFrame:bounds contents:nsImage];
-    [self beginDraggingSessionWithItems:@[draggingItem] event:event source:self];
+
+    NSDraggingSession *session = [self beginDraggingSessionWithItems:@[draggingItem] event:event source:self];
+    // NSPasteboardItem rejects NSFilenamesPboardType (not a UTI), but NSDraggingSession's
+    // pasteboard is a regular NSPasteboard that accepts legacy pboard types. Writing it here
+    // ensures DAWs that check NSFilenamesPboardType (e.g. Logic Pro) show the green plus
+    // badge and accept the drop across all drop zones.
+    [session.draggingPasteboard setPropertyList:@[filename] forType:NSFilenamesPboardType];
     self.isDraggingOut = true;
 }
 
